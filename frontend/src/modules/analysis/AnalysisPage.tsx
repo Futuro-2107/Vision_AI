@@ -94,9 +94,17 @@ export default function AnalysisPage({ store, user, onRun, notify }: AnalysisPag
       setCameraOn(true);
       setWsStatus('connecting');
 
-      const configuredApi = (import.meta as any).env?.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
-      const apiBase = configuredApi.replace(/\/api\/v1\/?$/, '');
-      const wsUrl = apiBase.replace(/^http/, 'ws') + '/api/v1/vision/stream';
+      // CONSTRUCCIÓN ROBUSTA DE LA URL WEBSOCKET DINÁMICA
+      const envUrl = (import.meta as any).env?.VITE_API_URL;
+      const fallbackUrl = 'https://vision-ai-k4tj.onrender.com';
+      const rawBase = envUrl || fallbackUrl;
+      
+      // Limpiamos la URL base por si incluye sufijos o barras inclinadas al final
+      const cleanBase = rawBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+      const wsProtocol = cleanBase.startsWith('https') ? 'wss' : 'ws';
+      const hostWithoutProtocol = cleanBase.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsProtocol}://${hostWithoutProtocol}/api/v1/vision/stream`;
+
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -152,11 +160,11 @@ export default function AnalysisPage({ store, user, onRun, notify }: AnalysisPag
       ws.send(JSON.stringify({ 
         frame: data, 
         confidence: threshold / 100, 
-        scenario: scenarioId // <--- ¡AQUÍ ESTÁ LA CLAVE! Enviamos el escenario activo
+        scenario: scenarioId 
       }));
     }, 100);
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [cameraOn, wsStatus, threshold]);
+  }, [cameraOn, wsStatus, threshold, scenarioId]);
 
   const captureFrame = () => {
     const video = videoRef.current;
@@ -238,7 +246,6 @@ export default function AnalysisPage({ store, user, onRun, notify }: AnalysisPag
           <small>Procesamiento en backend · FastAPI + OpenCV + YOLO</small>
         </div>
         <div className="camera-actions">
-          {/* Selector de escenarios dinámico */}
           <select value={scenarioId} onChange={e => setScenarioId(e.target.value)}>
             {store.scenarios.map((sc: any) => (
               <option key={sc.id} value={sc.id}>{sc.name}</option>
