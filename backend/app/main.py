@@ -20,7 +20,7 @@ app.add_middleware(
         'http://127.0.0.1:5174', 
         'http://localhost:4173', 
         'http://127.0.0.1:4173',
-        'https://vision-ai-k4tj.onrender.com'  # <--- ¡Añade tu dominio de Vercel aquí!
+        'https://vision-ai-silk-six.vercel.app'  # <--- ¡Añade tu dominio de Vercel aquí!
     ],
     allow_credentials=True, 
     allow_methods=['*'], 
